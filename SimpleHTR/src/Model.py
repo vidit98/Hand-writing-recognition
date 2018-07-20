@@ -11,9 +11,9 @@ class Model:
 	"minimalistic TF model for HTR"
 
 	# model constants
-	batchSize = 50
-	imgSize = (64, 1024)  #(ht,width)
-	maxTextLen = 256
+	batchSize = 16
+	imgSize = (64, 512)  #(ht,width)
+	maxTextLen = 128
 	var = []
 	def __init__(self, charList, mustRestore=False):
 		"init model: add CNN, RNN and CTC and initialize TF"

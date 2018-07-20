@@ -84,9 +84,13 @@ def train(filePath):
 def infer(filePath):
 	"recognize text in image provided by file path"
 	model = Model(open(fnCharList).read(), mustRestore=False)
+	print("Model init")
 	img = preprocess(cv2.imread(fnInfer), Model.imgSize)
+	print("img_pre")
 	batch = Batch(None, [img] * Model.batchSize)
+	print("batch")
 	recognized = model.inferBatch(batch)
+	print("infer")
 	print('Recognized:', '"' + recognized[0] + '"')
 
 

@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import cv2
-from deslant import deslantImg
+from Deslant import deslantImg
 
 
 def preprocess(img, imgSize, dataAugmentation=False):

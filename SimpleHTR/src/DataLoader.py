@@ -32,7 +32,7 @@ class DataLoader:
 		self.imgSize = imgSize
 		self.samples = []
 	
-		f=open(filePath+'words.txt')
+		f=open(filePath+'lines.txt')
 		chars = set()
 		for line in f:
 			# ignore comment line
@@ -47,7 +47,8 @@ class DataLoader:
 			fileName = filePath + 'lines/' + fileNameSplit[0] + '/' + fileNameSplit[0] + '-' + fileNameSplit[1] + '/' + lineSplit[0] + '.png'
 
 			# GT text are columns starting at 9
-			words = lineSplit[8:].split('|')
+			words = lineSplit[8].split('|')
+			print words
 			gtText = ' '.join(words)[:maxTextLen]
 			chars = chars.union(set(list(gtText)))
 
