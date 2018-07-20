@@ -12,8 +12,8 @@ class Model:
 
 	# model constants
 	batchSize = 50
-	imgSize = (64, 128)  #(ht,width)
-	maxTextLen = 32
+	imgSize = (64, 1024)  #(ht,width)
+	maxTextLen = 256
 	var = []
 	def __init__(self, charList, mustRestore=False):
 		"init model: add CNN, RNN and CTC and initialize TF"
@@ -22,7 +22,7 @@ class Model:
 		self.snapID = 0
 
 		# CNN
-		self.inputImgs = tf.placeholder(tf.float32, shape=(Model.batchSize, Model.imgSize[0], Model.imgSize[1],3))
+		self.inputImgs = tf.placeholder(tf.float32, shape=(Model.batchSize, Model.imgSize[0], Model.imgSize[1], 3))
 		cnnOut4d = self.setupCNN(self.inputImgs)
 
 		# RNN
@@ -40,11 +40,11 @@ class Model:
 			
 	def setupCNN(self, input_img):
 		"create CNN layers and return output of these layers"
-		print input_img.shape
+		print(input_img.shape)
 		# cnnIn4d = tf.expand_dims(input=input_img, axis=3)
-		print input_img.shape
-		def vgg_16(inputs,scope='vgg_16'):
-			print inputs.shape
+		# print input_img.shape
+		def vgg_16(inputs, scope='vgg_16'):
+			# print inputs.shape
 			with tf.variable_scope(scope, 'vgg_16', [inputs]) as sc:
 			    end_points_collection = sc.original_name_scope + '_end_points'
 			    # Collect outputs for conv2d, fully_connected and max_pool2d.
@@ -59,21 +59,16 @@ class Model:
 			return net
 
 		sess = tf.Session()
-		
-
-		
-		
+	
 		net = vgg_16(input_img)
 		saver1 = tf.train.Saver()
 
 
 		saver1.restore(sess, 'vgg_16.ckpt')
-		print "Model Restored------------"
+		print("Model Restored------------")
 		Model.var = [n for n in tf.get_default_graph().as_graph_def().node]
 
 		sess.close()
-
-		
 		
 		for i in range(2):
 			net = tf.layers.conv2d(net, 256, 3, padding="same",activation=tf.nn.relu)
@@ -86,7 +81,7 @@ class Model:
 		net = tf.layers.max_pooling2d(net, (2,1), (2,1))
 		net = tf.layers.conv2d(net, 16, 1,padding="same", activation=tf.nn.relu)	
 		net = tf.layers.batch_normalization(net,training=True)
-		print net.shape
+		print(net.shape)
 		# saver = tf.train.Saver()
 		# saver.restore(sess, 'vgg_16.ckpt')
 	    
@@ -112,7 +107,7 @@ class Model:
 	def setupRNN(self, rnnIn4d):
 		"create RNN layers and return output of these layers"
 		# rnnIn3d = tf.squeeze(rnnIn4d, axis=[2])
-		rnnIn3d = tf.reshape(rnnIn4d, shape=(Model.batchSize, Model.imgSize[1]/4,64))
+		rnnIn3d = tf.reshape(rnnIn4d, shape=(Model.batchSize, Model.imgSize[1]/4, 64))
 		# basic cells which is used to build RNN
 		numHidden = 128
 		cells = [tf.contrib.rnn.LSTMCell(num_units=numHidden, state_is_tuple=True) for _ in range(2)] # 2 layers
@@ -141,7 +136,7 @@ class Model:
 		# calc loss for batch
 		self.seqLen = tf.placeholder(tf.int32, [None])
 		loss = tf.nn.ctc_loss(labels=self.gtTexts, inputs=ctcIn3dTBC, sequence_length=self.seqLen, ctc_merge_repeated=True)
-		decoder = tf.nn.ctc_greedy_decoder(inputs=ctcIn3dTBC, sequence_length=self.seqLen)
+		decoder = tf.nn.ctc_beam_search_decoder(inputs=ctcIn3dTBC, sequence_length=self.seqLen)
 		return (tf.reduce_mean(loss), decoder)
 
 

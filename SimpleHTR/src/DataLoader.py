@@ -44,10 +44,11 @@ class DataLoader:
 			
 			# filename: part1-part2-part3 --> part1/part1-part2/part1-part2-part3.png
 			fileNameSplit = lineSplit[0].split('-')
-			fileName = filePath + 'words/' + fileNameSplit[0] + '/' + fileNameSplit[0] + '-' + fileNameSplit[1] + '/' + lineSplit[0] + '.png'
+			fileName = filePath + 'lines/' + fileNameSplit[0] + '/' + fileNameSplit[0] + '-' + fileNameSplit[1] + '/' + lineSplit[0] + '.png'
 
 			# GT text are columns starting at 9
-			gtText = ' '.join(lineSplit[8:])[:maxTextLen]
+			words = lineSplit[8:].split('|')
+			gtText = ' '.join(words)[:maxTextLen]
 			chars = chars.union(set(list(gtText)))
 
 			# put sample into list

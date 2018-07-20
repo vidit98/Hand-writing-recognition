@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import cv2
+from deslant import deslantImg
 
 
 def preprocess(img, imgSize, dataAugmentation=False):
@@ -8,7 +9,12 @@ def preprocess(img, imgSize, dataAugmentation=False):
 
 	# there are damaged files in IAM dataset - just use black image instead
 	if img is None:
-		img = np.zeros([imgSize[1], imgSize[0]])
+		img = np.zeros([imgSize[1], imgSize[0], 3])
+
+	gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+	des = deslantImg(gray_image)
+	deslant_image = des.deslant()
+	img = cv2.cvtColor(deslant_image, cv2.COLOR_GRAY2BGR)
 
 	# increase dataset size by applying random stretches to the images
 	if dataAugmentation:
@@ -26,7 +32,7 @@ def preprocess(img, imgSize, dataAugmentation=False):
 		f = 1e-6
 	newSize = (max(min(wt, int(w / f)), 1), max(min(ht, int(h / f)), 1)) # scale according to f (result at least 1 and at most wt or ht)
 	img = cv2.resize(img, newSize)
-	target = np.ones([ht, wt,3]) * 255
+	target = np.ones([ht, wt, 3]) * 255
 	target[0:newSize[1], 0:newSize[0] , 0:3] = img
 
 	# transpose for TF
