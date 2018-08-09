@@ -11,10 +11,11 @@ class Model:
 	"minimalistic TF model for HTR"
 
 	# model constants
-	batchSize = 16
-	imgSize = (64, 512)  #(ht,width)
-	maxTextLen = 128
-	var = []
+	batchSize = 40
+	imgSize = (64, 128)  #(ht,width)
+	maxTextLen = 32
+	var1 = []
+	var2 = []
 	def __init__(self, charList, mustRestore=False):
 		"init model: add CNN, RNN and CTC and initialize TF"
 		self.charList = charList
@@ -35,7 +36,8 @@ class Model:
 		self.optimizer = tf.train.RMSPropOptimizer(0.001).minimize(self.loss)
 
 		# initialize TF
-		(self.sess, self.saver) = self.setupTF()
+		(self.sess, var) = self.setupTF()
+		
 
 			
 	def setupCNN(self, input_img):
@@ -50,11 +52,11 @@ class Model:
 			    # Collect outputs for conv2d, fully_connected and max_pool2d.
 			    with slim.arg_scope([slim.conv2d, slim.fully_connected, slim.max_pool2d],
 			                        outputs_collections=end_points_collection):
-			    	net = slim.repeat(inputs, 2, slim.conv2d, 64, (3,3), scope='conv1')
+			    	net = slim.repeat(inputs, 2, slim.conv2d, 64, (3,3), scope='conv1', trainable = 'false')
 			    	net = slim.max_pool2d(net, [2, 2], scope='pool1')
-			    	net = slim.repeat(net, 2, slim.conv2d, 128, (3, 3), scope='conv2')
+			    	net = slim.repeat(net, 2, slim.conv2d, 128, (3, 3), scope='conv2', trainable = 'false')
 			    	net = slim.max_pool2d(net, [2, 2], scope='pool2')
-			    	net = slim.repeat(net, 1, slim.conv2d, 256, (3, 3), scope='conv3')
+			    	net = slim.repeat(net, 1, slim.conv2d, 256, (3, 3), scope='conv3', trainable = 'false')
 
 			return net
 
@@ -66,8 +68,8 @@ class Model:
 
 		saver1.restore(sess, 'vgg_16.ckpt')
 		print("Model Restored------------")
-		Model.var = [n for n in tf.get_default_graph().as_graph_def().node]
-
+		#Model.var1 = [n for n in tf.get_default_graph().as_graph_def().node]
+		Model.var1 = tf.contrib.framework.get_variables()
 		sess.close()
 		
 		for i in range(2):
@@ -82,6 +84,7 @@ class Model:
 		net = tf.layers.conv2d(net, 16, 1,padding="same", activation=tf.nn.relu)	
 		net = tf.layers.batch_normalization(net,training=True)
 		print(net.shape)
+
 		# saver = tf.train.Saver()
 		# saver.restore(sess, 'vgg_16.ckpt')
 	    
@@ -107,7 +110,7 @@ class Model:
 	def setupRNN(self, rnnIn4d):
 		"create RNN layers and return output of these layers"
 		# rnnIn3d = tf.squeeze(rnnIn4d, axis=[2])
-		rnnIn3d = tf.reshape(rnnIn4d, shape=(Model.batchSize, Model.imgSize[1]/4, 64))
+		rnnIn3d = tf.reshape(rnnIn4d, shape=(int(Model.batchSize), int(Model.imgSize[1]/4), 64))
 		# basic cells which is used to build RNN
 		numHidden = 128
 		cells = [tf.contrib.rnn.LSTMCell(num_units=numHidden, state_is_tuple=True) for _ in range(2)] # 2 layers
@@ -136,7 +139,7 @@ class Model:
 		# calc loss for batch
 		self.seqLen = tf.placeholder(tf.int32, [None])
 		loss = tf.nn.ctc_loss(labels=self.gtTexts, inputs=ctcIn3dTBC, sequence_length=self.seqLen, ctc_merge_repeated=True)
-		decoder = tf.nn.ctc_beam_search_decoder(inputs=ctcIn3dTBC, sequence_length=self.seqLen)
+		decoder = tf.nn.ctc_greedy_decoder(inputs=ctcIn3dTBC, sequence_length=self.seqLen)
 		return (tf.reduce_mean(loss), decoder)
 
 
@@ -147,9 +150,9 @@ class Model:
 
 		sess=tf.Session() # TF session
 
-		saver = tf.train.Saver(max_to_keep=1) # saver saves model to file
+		#saver = tf.train.Saver(max_to_keep=1) # saver saves model to file
 		# saver_vgg = tf.train.Saver(var_list=Model.var)
-		sess.run(tf.global_variables_initializer())
+		#sess.run(tf.global_variables_initializer())
 		modelDir = '../model/'
 		latestSnapshot = tf.train.latest_checkpoint(modelDir) # is there a saved model?
 		latestSnapshot = False
@@ -164,9 +167,21 @@ class Model:
 			saver.restore(sess, latestSnapshot)
 		else:
 			print('Init with new values')
-			sess.run(tf.global_variables_initializer())
+			Model.var2 = tf.contrib.framework.get_variables()
+			#print(Model.var1)
+			#print(Model.var2)
+			saver_vgg = tf.train.Saver(var_list=Model.var1)
+			"""Model.var2 = [n for n in tf.get_default_graph().as_graph_def().node]
+			#var_name = list(set(Model.var2)- set(Model.var1))"""
+			var_name=[]
+			for l in range(len(Model.var2)):
+				if Model.var2[l] not in Model.var1:
+					var_name.append(Model.var2[l])
+			
+			sess.run(tf.variables_initializer(var_name))
+			saver_vgg.restore(sess, "vgg_16.ckpt")
 
-		return (sess,saver)
+		return (sess, var_name)
 
 
 	def toSparse(self, texts):

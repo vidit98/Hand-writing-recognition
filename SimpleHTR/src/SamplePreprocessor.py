@@ -9,13 +9,13 @@ def preprocess(img, imgSize, dataAugmentation=False):
 
 	# there are damaged files in IAM dataset - just use black image instead
 	if img is None:
-		img = np.zeros([imgSize[1], imgSize[0], 3])
+		img = np.zeros([imgSize[1], imgSize[0], 3], dtype = np.uint8)
 
 	gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	des = deslantImg(gray_image)
 	deslant_image = des.deslant()
 	img = cv2.cvtColor(deslant_image, cv2.COLOR_GRAY2BGR)
-
+	
 	# increase dataset size by applying random stretches to the images
 	if dataAugmentation:
 		stretch = (random.random() - 0.5) # -0.5 .. +0.5
