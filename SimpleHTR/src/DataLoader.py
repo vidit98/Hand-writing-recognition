@@ -48,7 +48,7 @@ class DataLoader:
 
 			# GT text are columns starting at 9
 			words = lineSplit[8:]
-			print(words)
+			#print(words)
 			gtText = ' '.join(words)[:maxTextLen]
 			chars = chars.union(set(list(gtText)))
 
@@ -99,6 +99,7 @@ class DataLoader:
 		"iterator"
 		batchRange = range(self.currIdx, self.currIdx + self.batchSize)
 		gtTexts = [self.samples[i].gtText for i in batchRange]
+		
 		imgs = [preprocess(cv2.imread(self.samples[i].filePath), self.imgSize, self.dataAugmentation) for i in batchRange]
 		self.currIdx += self.batchSize
 		return Batch(gtTexts, imgs)

@@ -36,7 +36,7 @@ class Model:
 		self.optimizer = tf.train.RMSPropOptimizer(0.001).minimize(self.loss)
 
 		# initialize TF
-		(self.sess, var) = self.setupTF()
+		(self.sess, var, self.saver) = self.setupTF()
 		
 
 			
@@ -70,6 +70,7 @@ class Model:
 		print("Model Restored------------")
 		#Model.var1 = [n for n in tf.get_default_graph().as_graph_def().node]
 		Model.var1 = tf.contrib.framework.get_variables()
+		# print(Model.var1)
 		sess.close()
 		
 		for i in range(2):
@@ -169,7 +170,8 @@ class Model:
 			print('Init with new values')
 			Model.var2 = tf.contrib.framework.get_variables()
 			#print(Model.var1)
-			#print(Model.var2)
+			# print(Model.var2)
+
 			saver_vgg = tf.train.Saver(var_list=Model.var1)
 			"""Model.var2 = [n for n in tf.get_default_graph().as_graph_def().node]
 			#var_name = list(set(Model.var2)- set(Model.var1))"""
@@ -177,11 +179,11 @@ class Model:
 			for l in range(len(Model.var2)):
 				if Model.var2[l] not in Model.var1:
 					var_name.append(Model.var2[l])
-			
+		
 			sess.run(tf.variables_initializer(var_name))
 			saver_vgg.restore(sess, "vgg_16.ckpt")
 
-		return (sess, var_name)
+		return (sess, var_name,saver_vgg)
 
 
 	def toSparse(self, texts):
