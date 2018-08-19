@@ -23,7 +23,8 @@ class Model:
 		self.snapID = 0
 
 		# CNN
-		self.inputImgs = tf.placeholder(tf.float32, shape=(Model.batchSize, Model.imgSize[0], Model.imgSize[1], 3))
+		self.inputImgs = tf.placeholder(tf.float32, shape=(Model.batchSize, Model.imgSize[0], Model.imgSize[1]))
+		self.train = tf.placeholder(tf.bool)
 		cnnOut4d = self.setupCNN(self.inputImgs)
 
 		# RNN
@@ -36,13 +37,13 @@ class Model:
 		self.optimizer = tf.train.RMSPropOptimizer(0.001).minimize(self.loss)
 
 		# initialize TF
-		(self.sess, var, self.saver) = self.setupTF()
+		(self.sess, self.saver) = self.setupTF()
 		
 
 			
 	def setupCNN(self, input_img):
 		"create CNN layers and return output of these layers"
-		print(input_img.shape)
+		"""print(input_img.shape)
 		# cnnIn4d = tf.expand_dims(input=input_img, axis=3)
 		# print input_img.shape
 		def vgg_16(inputs, scope='vgg_16'):
@@ -65,25 +66,38 @@ class Model:
 		net = vgg_16(input_img)
 		saver1 = tf.train.Saver()
 
-
+		
 		saver1.restore(sess, 'vgg_16.ckpt')
 		print("Model Restored------------")
 		#Model.var1 = [n for n in tf.get_default_graph().as_graph_def().node]
 		Model.var1 = tf.contrib.framework.get_variables()
 		# print(Model.var1)
 		sess.close()
-		
+		"""
+		input_img = tf.expand_dims(input=input_img, axis=3)
+		net = tf.layers.dropout(input_img, rate = 0.1, training = self.train)
 		for i in range(2):
-			net = tf.layers.conv2d(net, 256, 3, padding="same",activation=tf.nn.relu)
-		net = tf.layers.batch_normalization(net,training=True)
+			net = tf.layers.conv2d(net, 64, 3, padding = "same", activation = tf.nn.relu)
+		net = tf.layers.max_pooling2d(net, (2,2), (2,2))	
+		net = tf.layers.dropout(net, rate = 0.3, training = self.train)
+
+		for i in range(2):
+			net = tf.layers.conv2d(net, 128, 3, padding = "same", activation = tf.nn.relu)
+		net = tf.layers.batch_normalization(net, training = self.train)
+		net = tf.layers.max_pooling2d(net, (2,2), (2,2))
+		net = tf.layers.dropout(net, rate=0.3, training = self.train)	
+		
+		for i in range(3):
+			net = tf.layers.conv2d(net, 256, 3, padding = "same", activation = tf.nn.relu)
+		net = tf.layers.batch_normalization(net, training = self.train)
 		net = tf.layers.max_pooling2d(net, (2,1), (2,1))
-		net = tf.layers.dropout(net, rate=0.3, training=True)
+		net = tf.layers.dropout(net, rate=0.3, training = self.train)
 
 		for i in range(3):
-			net = tf.layers.conv2d(net, 512, 3, padding="same",activation=tf.nn.relu)
+			net = tf.layers.conv2d(net, 512, 3, padding = "same", activation = tf.nn.relu)
 		net = tf.layers.max_pooling2d(net, (2,1), (2,1))
-		net = tf.layers.conv2d(net, 16, 1,padding="same", activation=tf.nn.relu)	
-		net = tf.layers.batch_normalization(net,training=True)
+		net = tf.layers.conv2d(net, 16, 1, padding = "same", activation = tf.nn.relu)	
+		net = tf.layers.batch_normalization(net, training = self.train)
 		print(net.shape)
 
 		# saver = tf.train.Saver()
@@ -168,22 +182,23 @@ class Model:
 			saver.restore(sess, latestSnapshot)
 		else:
 			print('Init with new values')
-			Model.var2 = tf.contrib.framework.get_variables()
+			#Model.var2 = tf.contrib.framework.get_variables()
 			#print(Model.var1)
 			# print(Model.var2)
 
-			saver_vgg = tf.train.Saver(var_list=Model.var1)
+			#saver_vgg = tf.train.Saver(var_list=Model.var1)
 			"""Model.var2 = [n for n in tf.get_default_graph().as_graph_def().node]
 			#var_name = list(set(Model.var2)- set(Model.var1))"""
-			var_name=[]
-			for l in range(len(Model.var2)):
-				if Model.var2[l] not in Model.var1:
-					var_name.append(Model.var2[l])
+			#var_name=[]
+			#for l in range(len(Model.var2)):
+			#	if Model.var2[l] not in Model.var1:
+			#		var_name.append(Model.var2[l])
 		
-			sess.run(tf.variables_initializer(var_name))
-			saver_vgg.restore(sess, "vgg_16.ckpt")
+			sess.run(tf.global_variables_initializer())
+			saver_vgg = tf.train.Saver()
+			#saver_vgg.restore(sess, "vgg_16.ckpt")
 
-		return (sess, var_name,saver_vgg)
+		return (sess,saver_vgg)
 
 
 	def toSparse(self, texts):
@@ -227,13 +242,13 @@ class Model:
 	def trainBatch(self, batch):
 		"feed a batch into the NN to train it"
 		sparse = self.toSparse(batch.gtTexts)
-		(_, lossVal) = self.sess.run([self.optimizer, self.loss], { self.inputImgs : batch.imgs, self.gtTexts : sparse , self.seqLen : [Model.maxTextLen] * Model.batchSize } )
+		(_, lossVal) = self.sess.run([self.optimizer, self.loss], { self.inputImgs : batch.imgs, self.gtTexts : sparse , self.seqLen : [Model.maxTextLen] * Model.batchSize, self.train : True} )
 		return lossVal
 
 
 	def inferBatch(self, batch):
 		"feed a batch into the NN to recngnize the texts"
-		decoded = self.sess.run(self.decoder, { self.inputImgs : batch.imgs, self.seqLen : [Model.maxTextLen] * Model.batchSize } )
+		decoded = self.sess.run(self.decoder, { self.inputImgs : batch.imgs, self.seqLen : [Model.maxTextLen] * Model.batchSize, self.train : False} )
 		return self.fromSparse(decoded)
 	
 

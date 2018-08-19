@@ -9,12 +9,12 @@ def preprocess(img, imgSize, dataAugmentation=False):
 
 	# there are damaged files in IAM dataset - just use black image instead
 	if img is None:
-		img = np.zeros([imgSize[1], imgSize[0], 3], dtype = np.uint8)
+		img = np.zeros([imgSize[1], imgSize[0]], dtype = np.uint8)
 
 	gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	des = deslantImg(gray_image)
-	deslant_image = des.deslant()
-	img = cv2.cvtColor(deslant_image, cv2.COLOR_GRAY2BGR)
+	img = des.deslant()
+	#img = cv2.cvtColor(deslant_image, cv2.COLOR_GRAY2BGR)
 	
 	# increase dataset size by applying random stretches to the images
 	if dataAugmentation:
@@ -24,7 +24,7 @@ def preprocess(img, imgSize, dataAugmentation=False):
 	
 	# create target image and copy sample image into it
 	(wt, ht) = imgSize
-	(h, w,d) = img.shape
+	(h, w) = img.shape
 	fx = w / wt
 	fy = h / ht
 	f = max(fx, fy)
@@ -32,8 +32,8 @@ def preprocess(img, imgSize, dataAugmentation=False):
 		f = 1e-6
 	newSize = (max(min(wt, int(w / f)), 1), max(min(ht, int(h / f)), 1)) # scale according to f (result at least 1 and at most wt or ht)
 	img = cv2.resize(img, newSize)
-	target = np.ones([ht, wt, 3]) * 255
-	target[0:newSize[1], 0:newSize[0] , 0:3] = img
+	target = np.ones([ht, wt]) * 255
+	target[0:newSize[1], 0:newSize[0]] = img
 
 	# transpose for TF
 	img = cv2.transpose(target)
