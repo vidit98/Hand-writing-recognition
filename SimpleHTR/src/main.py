@@ -38,6 +38,7 @@ def train(filePath):
 		while loader.hasNext():
 			iterInfo = loader.getIteratorInfo()
 			batch = loader.getNext()
+
 			loss = model.trainBatch(batch)
 			print('Batch:', iterInfo[0],'/', iterInfo[1], 'Loss:', loss)
 
@@ -61,7 +62,7 @@ def train(filePath):
 				numTotal +=1
 		
 		# print validation result
-		accuracy = numOK / numTotal
+		accuracy = float(numOK) / float(numTotal)
 		print('Correctly recognized words:', accuracy * 100.0, '%')
 		
 		# if best validation accuracy so far, save model parameters

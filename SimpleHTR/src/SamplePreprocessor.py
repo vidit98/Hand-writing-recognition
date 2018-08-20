@@ -9,7 +9,7 @@ def preprocess(img, imgSize, dataAugmentation=False):
 
 	# there are damaged files in IAM dataset - just use black image instead
 	if img is None:
-		img = np.zeros([imgSize[1], imgSize[0]], dtype = np.uint8)
+		img = np.zeros([imgSize[0], imgSize[1]], dtype = np.uint8)
 
 	gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	des = deslantImg(gray_image)
@@ -23,20 +23,28 @@ def preprocess(img, imgSize, dataAugmentation=False):
 		img = cv2.resize(img, (wStretched, img.shape[0])) # stretch horizontally by factor 0.5 .. 1.5
 	
 	# create target image and copy sample image into it
-	(wt, ht) = imgSize
+	# cv2.imshow("aaa",img)
+	# cv2.waitKey(0)
+	(ht, wt) = imgSize
 	(h, w) = img.shape
 	fx = w / wt
 	fy = h / ht
 	f = max(fx, fy)
 	if f == 0:
 		f = 1e-6
-	newSize = (max(min(wt, int(w / f)), 1), max(min(ht, int(h / f)), 1)) # scale according to f (result at least 1 and at most wt or ht)
-	img = cv2.resize(img, newSize)
+	newSize = ( max(min(ht, int(h / f)), 1), max(min(wt, int(w / f)), 1)) # scale according to f (result at least 1 and at most wt or ht)
+	# print newSize
+	# print img.shape,"!111111111"
+	img = cv2.resize(img, (newSize[1], newSize[0]))
+	# print img.shape,"!1222222221"
+	
 	target = np.ones([ht, wt]) * 255
-	target[0:newSize[1], 0:newSize[0]] = img
+	# print target.shape, "1232422$"
+	target[0:newSize[0], 0:newSize[1]] = img
 
 	# transpose for TF
-	img = cv2.transpose(target)
+	# img = cv2.transpose(target)
+	img = target
 
 	# normalize
 	(m, s) = cv2.meanStdDev(img)
@@ -44,5 +52,7 @@ def preprocess(img, imgSize, dataAugmentation=False):
 	s = s[0][0]
 	img = img - m
 	img = img / s if s>0 else img
+	# cv2.imshow("aaa",img)
+	# cv2.waitKey(0)
 	return img
 

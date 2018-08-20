@@ -74,12 +74,15 @@ class Model:
 		# print(Model.var1)
 		sess.close()
 		"""
+		
 		input_img = tf.expand_dims(input=input_img, axis=3)
+		
 		net = tf.layers.dropout(input_img, rate = 0.1, training = self.train)
 		for i in range(2):
 			net = tf.layers.conv2d(net, 64, 3, padding = "same", activation = tf.nn.relu)
 		net = tf.layers.max_pooling2d(net, (2,2), (2,2))	
 		net = tf.layers.dropout(net, rate = 0.3, training = self.train)
+
 
 		for i in range(2):
 			net = tf.layers.conv2d(net, 128, 3, padding = "same", activation = tf.nn.relu)
@@ -135,11 +138,12 @@ class Model:
 
 		# bidirectional RNN
 		# BxTxF -> BxTx2H
+		# print(stacked.shape, "stacked")
 		((fw, bw), _) = tf.nn.bidirectional_dynamic_rnn(cell_fw=stacked, cell_bw=stacked, inputs=rnnIn3d, dtype=rnnIn3d.dtype)
-									
+		print(fw.shape, bw.shape, "fw bw")					
 		# BxTxH + BxTxH -> BxTx2H -> BxTx1X2H
 		concat = tf.expand_dims(tf.concat([fw, bw], 2), 2)
-									
+		print(concat.shape, "concat")				
 		# project output to chars (including blank): BxTx1x2H -> BxTx1xC -> BxTxC
 		kernel = tf.Variable(tf.truncated_normal([1, 1, numHidden * 2, len(self.charList) + 1], stddev=0.1))
 		return tf.squeeze(tf.nn.atrous_conv2d(value=concat, filters=kernel, rate=1, padding='SAME'), axis=[2])
