@@ -101,7 +101,7 @@ class Model:
 		net = tf.layers.max_pooling2d(net, (2,1), (2,1))
 		net = tf.layers.conv2d(net, 16, 1, padding = "same", activation = tf.nn.relu)	
 		net = tf.layers.batch_normalization(net, training = self.train)
-		print(net.shape)
+		print(net.shape, "shape")
 
 		# saver = tf.train.Saver()
 		# saver.restore(sess, 'vgg_16.ckpt')
@@ -128,7 +128,8 @@ class Model:
 	def setupRNN(self, rnnIn4d):
 		"create RNN layers and return output of these layers"
 		# rnnIn3d = tf.squeeze(rnnIn4d, axis=[2])
-		rnnIn3d = tf.reshape(rnnIn4d, shape=(int(Model.batchSize), int(Model.imgSize[1]/4), 64))
+		temp = tf.transpose(rnnIn4d, (0,2,1,3))
+		rnnIn3d = tf.reshape(temp, shape=(int(Model.batchSize), int(Model.imgSize[1]/4), 64))
 		# basic cells which is used to build RNN
 		numHidden = 128
 		cells = [tf.contrib.rnn.LSTMCell(num_units=numHidden, state_is_tuple=True) for _ in range(2)] # 2 layers
