@@ -14,8 +14,18 @@ OpenCV<br/>
 Numpy
 
 ## Instructions to run
+Get saved model from [here](https://drive.google.com/open?id=1fL94Hd4EE-tIfgYbrNmV22fkkd_r1SWP)
+Put model in model folder inside hack then run the commands given below.
 ```
 cd Hack
 ./compile
 python3 MyModel.py
 ```
+Output will be given in ans.txt file in format <br/>
+x-coordinate y-coordinate width height recognized character.<br/>
+
+coordinates are of oriented image and not the original one.<br/>
+
+Test accuracy on NIST dataset is above 90%. 
+
+
