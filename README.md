@@ -12,3 +12,10 @@ Python 3.5(only)<br/>
 Tensorflow 1.4<br/>
 OpenCV<br/>
 Numpy
+
+## Instructions to run
+```
+cd Hack
+./compile
+python3 MyModel.py
+```
