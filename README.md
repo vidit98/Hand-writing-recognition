@@ -19,7 +19,7 @@ Put model in model folder inside hack then run the commands given below.
 ```
 cd Hack
 ./compile
-python3 MyModel.py
+python3 MyModel.py <PATH OF THE IMAGE>
 ```
 Output will be given in ans.txt file in format <br/>
 x-coordinate y-coordinate width height recognized character.<br/>
